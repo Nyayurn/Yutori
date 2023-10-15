@@ -37,10 +37,10 @@
     <!-- 核心框架 -->
     <dependency>
         <groupId>com.yurn</groupId>
-        <artifactId>YurnSatoriFramework</artifactId>
+        <artifactId>YurnSatoriSdk</artifactId>
         <version>0.0.4</version>
         <scope>system</scope>
-        <systemPath>${project.basedir}/lib/YurnSatoriFramework-0.0.4.jar</systemPath>
+        <systemPath>${project.basedir}/lib/YurnSatoriSdk-0.0.4.jar</systemPath>
     </dependency>
     <!-- Http 和 WebSocket 所需依赖 -->
     <dependency>
