@@ -4,6 +4,9 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.yurn.satori.sdk.entity.MessageEntity;
 import com.yurn.satori.sdk.entity.PageResponseEntity;
+import com.yurn.satori.sdk.entity.PropertiesEntity;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import java.util.List;
 
@@ -12,22 +15,44 @@ import java.util.List;
  *
  * @author Yurn
  */
-public final class MessageApi {
+@Data
+@AllArgsConstructor
+public class MessageApi {
+    /**
+     * 平台名称
+     */
+    private String platform;
+
+    /**
+     * 机器人 ID
+     */
+    private String selfId;
+
+    /**
+     * SendMessage 实例类
+     */
+    private SendMessage sendMessage;
+
+    public MessageApi(String platform, String selfId, PropertiesEntity properties) {
+        this.platform = platform;
+        this.selfId = selfId;
+        this.sendMessage = new SendMessage(platform, selfId, properties);
+    }
+
+
     /**
      * 发送消息
      * 发送消息, 返回一个 Message 对象构成的数组
      *
      * @param channelId 频道 ID
      * @param content   消息内容
-     * @param platform  平台名称
-     * @param selfId    机器人 ID
      * @return 输出
      */
-    public static List<MessageEntity> createMessage(String channelId, String content, String platform, String selfId) {
+    public List<MessageEntity> createMessage(String channelId, String content) {
         JSONObject map = new JSONObject();
         map.put("channel_id", channelId);
         map.put("content", content);
-        String response = SendMessage.sendGenericMessage(platform, selfId, "message", "create", map.toString());
+        String response = sendMessage.sendGenericMessage("message", "create", map.toString());
         return JSONArray.parse(response).toList(MessageEntity.class);
     }
 
@@ -37,15 +62,13 @@ public final class MessageApi {
      *
      * @param channelId 频道 ID
      * @param messageId 消息 ID
-     * @param platform  平台名称
-     * @param selfId    机器人 ID
      * @return 输出
      */
-    public static MessageEntity getMessage(String channelId, String messageId, String platform, String selfId) {
+    public MessageEntity getMessage(String channelId, String messageId) {
         JSONObject map = new JSONObject();
         map.put("channel_id", channelId);
         map.put("message_id", messageId);
-        String response = SendMessage.sendGenericMessage(platform, selfId, "message", "get", map.toString());
+        String response = sendMessage.sendGenericMessage("message", "get", map.toString());
         return JSONObject.parseObject(response, MessageEntity.class);
     }
 
@@ -55,14 +78,12 @@ public final class MessageApi {
      *
      * @param channelId 频道 ID
      * @param messageId 消息 ID
-     * @param platform  平台名称
-     * @param selfId    机器人 ID
      */
-    public static void deleteMessage(String channelId, String messageId, String platform, String selfId) {
+    public void deleteMessage(String channelId, String messageId) {
         JSONObject map = new JSONObject();
         map.put("channel_id", channelId);
         map.put("message_id", messageId);
-        SendMessage.sendGenericMessage(platform, selfId, "message", "delete", map.toString());
+        sendMessage.sendGenericMessage("message", "delete", map.toString());
     }
 
     /**
@@ -72,15 +93,13 @@ public final class MessageApi {
      * @param channelId 频道 ID
      * @param messageId 消息 ID
      * @param content   消息内容
-     * @param platform  平台名称
-     * @param selfId    机器人 ID
      */
-    public static void updateMessage(String channelId, String messageId, String content, String platform, String selfId) {
+    public void updateMessage(String channelId, String messageId, String content) {
         JSONObject map = new JSONObject();
         map.put("channel_id", channelId);
         map.put("message_id", messageId);
         map.put("content", content);
-        SendMessage.sendGenericMessage(platform, selfId, "message", "update", map.toString());
+        sendMessage.sendGenericMessage("message", "update", map.toString());
     }
 
     /**
@@ -89,15 +108,13 @@ public final class MessageApi {
      *
      * @param channelId 频道 ID
      * @param next      分页令牌
-     * @param platform  平台名称
-     * @param selfId    机器人 ID
      * @return 输出
      */
-    public static List<PageResponseEntity<MessageEntity>> listMessage(String channelId, String next, String platform, String selfId) {
+    public List<PageResponseEntity<MessageEntity>> listMessage(String channelId, String next) {
         JSONObject map = new JSONObject();
         map.put("channel_id", channelId);
         map.put("next", next);
-        String response = SendMessage.sendGenericMessage(platform, selfId, "message", "list", map.toString());
+        String response = sendMessage.sendGenericMessage("message", "list", map.toString());
         //noinspection unchecked
         return JSONArray.parse(response).stream().map(o -> ((PageResponseEntity<MessageEntity>) o)).toList();
     }

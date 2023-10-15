@@ -1,6 +1,8 @@
 package com.yurn.satori.sdk.api;
 
 import com.yurn.satori.sdk.entity.PropertiesEntity;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -11,35 +13,63 @@ import java.util.Optional;
  *
  * @author Yurn
  */
-public final class SendMessage {
-    private static final String VERSION = "v1";
-    private static final OkHttpClient CLIENT = new OkHttpClient();
+@Data
+@AllArgsConstructor
+public class SendMessage {
+    /**
+     * HTTP Client
+     */
+    private OkHttpClient client = new OkHttpClient();
 
-    public static PropertiesEntity properties;
+    /**
+     * 平台名称
+     */
+    private String platform;
 
-    public static String sendGenericMessage(String platform, String selfId, String resource, String method, String body) {
+    /**
+     * 机器人 ID
+     */
+    private String selfId;
+
+    /**
+     * Satori API 版本
+     */
+    private String version = "v1";
+
+    /**
+     * Satori 对接相关设置
+     */
+    private PropertiesEntity properties;
+
+    public SendMessage(String platform, String selfId, PropertiesEntity properties) {
+        this.platform = platform;
+        this.selfId = selfId;
+        this.properties = properties;
+    }
+
+    public String sendGenericMessage(String resource, String method, String body) {
         RequestBody requestBody = RequestBody.create(Optional.ofNullable(body).orElse(""),
                 MediaType.parse("application/json;charset=utf-8"));
         Request request = new Request.Builder()
-                .url(String.format("http://%s/%s/%s.%s", properties.getAddress(), VERSION, resource, method))
-                .headers(makeHttpHeaders(platform, selfId))
+                .url(String.format("http://%s/%s/%s.%s", properties.getAddress(), version, resource, method))
+                .headers(makeHttpHeaders())
                 .post(requestBody)
                 .build();
         return send(request);
     }
 
-    public static String sendInternalMessage(String platform, String selfId, String method, String body) {
+    public String sendInternalMessage(String method, String body) {
         RequestBody requestBody = RequestBody.create(Optional.ofNullable(body).orElse(""),
                 MediaType.parse("application/json;charset=utf-8"));
         Request request = new Request.Builder()
-                .url(String.format("http://%s/%s/internal/%s", properties.getAddress(), VERSION, method))
-                .headers(makeHttpHeaders(platform, selfId))
+                .url(String.format("http://%s/%s/internal/%s", properties.getAddress(), version, method))
+                .headers(makeHttpHeaders())
                 .post(requestBody)
                 .build();
         return send(request);
     }
 
-    private static Headers makeHttpHeaders(String platform, String selfId) {
+    private Headers makeHttpHeaders() {
         Headers.Builder builder = new Headers.Builder();
         builder.add("Content-Type", "application/json");
         if (properties.getToken() != null) {
@@ -54,8 +84,8 @@ public final class SendMessage {
         return builder.build();
     }
 
-    private static String send(Request request) {
-        Call call = CLIENT.newCall(request);
+    private String send(Request request) {
+        Call call = client.newCall(request);
         try (Response response = call.execute()) {
             if (response.body() != null) {
                 return response.body().string();

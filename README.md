@@ -13,8 +13,6 @@
 ## 基础信息
 
 > 提示: 本文档默认您了解并熟悉 Java 基本语法
-> 
-> 注意: 仅支持 JDK 17+
 
 - 推荐使用 [YurnQbotFramework](https://github.com/Nyayurn/YurnQbotFramework) 框架进行 QQ 机器人的开发
 
@@ -40,9 +38,9 @@
     <dependency>
         <groupId>com.yurn</groupId>
         <artifactId>YurnSatoriFramework</artifactId>
-        <version>0.0.4-SNAPSHOT</version>
+        <version>0.0.4</version>
         <scope>system</scope>
-        <systemPath>${project.basedir}/lib/YurnSatoriFramework-0.0.4-SNAPSHOT.jar</systemPath>
+        <systemPath>${project.basedir}/lib/YurnSatoriFramework-0.0.4.jar</systemPath>
     </dependency>
     <!-- Http 和 WebSocket 所需依赖 -->
     <dependency>
@@ -50,17 +48,17 @@
         <groupId>com.squareup.okhttp3</groupId>
         <version>4.10.0</version>
     </dependency>
-    <!-- 日志系统(可替换为其他slf4j实现) -->
-    <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>1.4.11</version>
-    </dependency>
     <!-- JSON 序列化/反序列化 -->
     <dependency>
         <groupId>com.alibaba.fastjson2</groupId>
         <artifactId>fastjson2</artifactId>
         <version>2.0.40</version>
+    </dependency>
+    <!-- 日志系统(可替换为其他slf4j实现) -->
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.4.11</version>
     </dependency>
 </dependencies>
 ```
@@ -71,14 +69,27 @@
 
 ```java
 public class Main {
-    static {
+    private final ListenerContainer listenerContainer = new ListenerContainer();
+    private final PropertiesEntity properties = new PropertiesEntity("127.0.0.1:5500", "Sakura201520");
+
+    public Main() {
         // new 一个对象以触发监听器的注册
-        new TestListener();
+        new TestListener(listenerContainer, properties);
     }
-    
+
+    private void run() {
+        // 构造一个 HTTP 客户端用于进行 WebSocket 连接
+        OkHttpClient client = new OkHttpClient.Builder().readTimeout(3, TimeUnit.SECONDS).writeTimeout(3, TimeUnit.SECONDS)
+                .connectTimeout(3, TimeUnit.SECONDS).build();
+        // 构造一个 Request 请求
+        Request request = new Request.Builder().get().url("ws://" + properties.getAddress() + "/v1/events").build();
+        // 新建一个 WebSocket 连接
+        //client.newWebSocket(request, new MyWebSocketClient());
+        client.newWebSocket(request, new MyWebSocketClient(properties.getToken(), listenerContainer));
+    }
+
     public static void main(String[] args) {
-        // 初始化核心启动类并传递一个 Properties 参数实体类, 并运行
-        new Boot(new PropertiesEntity("127.0.0.1:5500", "token")).run();
+        new Main().run();
     }
 }
 ```
@@ -87,9 +98,12 @@ public class Main {
 
 ```java
 public class TestListener {
-    public TestListener() {
-        // 通过在构造器内对 GlobalEventChannel 的实例添加一个事件实现注册
-        GlobalEventChannel.INSTANCE.addEvent(event -> {
+    private final PropertiesEntity properties;
+
+    public TestListener(ListenerContainer listenerContainer, PropertiesEntity properties) {
+        this.properties = properties;
+        // 通过在构造器内对 listenerContainer 添加一个事件实现注册
+        listenerContainer.addOnEventListener(event -> {
             // 判断事件的类型是否为 message-created(新消息创建, 即接收到消息)
             if (event.getType().equals(MessageEvents.MESSAGE_CREATED)) {
                 this.onMessage(event);
@@ -99,12 +113,11 @@ public class TestListener {
 
     public void onMessage(EventEntity event) {
         if ("test".equals(event.getMessage().getContent())) {
-            // 此为单 Bot 写法, 多 Bot 请自行过滤出对应的 LoginEntity 实例
-            LoginEntity login = BotContainer.getINSTANCE().getLogins()[0];
             ChannelEntity channel = event.getChannel();
-            // 通过对应 API 类的静态方法发送消息
-            MessageApi.createMessage((channel.getType().equals(ChannelEntity.DIRECT) ? "private:" : "") + channel.getId(),
-                    "test done!", login.getPlatform(), login.getSelfId());
+            // 通过对应 API 类的方法发送消息
+            MessageApi messageApi = new MessageApi(event.getPlatform(), event.getSelfId(), properties);
+            messageApi.createMessage((channel.getType().equals(ChannelEntity.DIRECT) ? "private:" : "") + channel.getId(),
+                    "test done!");
         }
     }
 }
@@ -113,4 +126,4 @@ public class TestListener {
 # 进阶
 
 - 框架整体与 Satori 架构基本一致, 请参考 [Satori 文档](https://satori.js.org/zh-CN/protocol)
-- 源码含有大量 javadoc 方便阅读, 请自行阅读源码
+- 源码内有 javadoc 方便阅读, 请自行阅读源码
