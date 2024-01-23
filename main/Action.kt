@@ -14,6 +14,7 @@ See the Mulan PSL v2 for more details.
 
 package io.github.nyayurn.yutori
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.github.nyayurn.yutori.message.MessageDSLBuilder
@@ -78,6 +79,7 @@ class Bot private constructor(
 
 class ChannelAction private constructor(private val satoriAction: SatoriAction) {
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     /**
      * 获取群组频道
@@ -148,6 +150,7 @@ class GuildAction private constructor(
     private val satoriAction: SatoriAction
 ) {
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     /**
      * 获取群组
@@ -197,6 +200,7 @@ class GuildAction private constructor(
         private val satoriAction: SatoriAction
     ) {
         private val mapper = jacksonObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
         /**
          * 获取群组成员
@@ -298,6 +302,7 @@ class GuildAction private constructor(
 
     class RoleAction private constructor(private val satoriAction: SatoriAction) {
         private val mapper = jacksonObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
         /**
          * 获取群组角色列表
@@ -359,6 +364,7 @@ class GuildAction private constructor(
 
 class LoginAction private constructor(private val satoriAction: SatoriAction) {
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     /**
      * 获取登录信息
@@ -373,6 +379,7 @@ class LoginAction private constructor(private val satoriAction: SatoriAction) {
 
 class MessageAction private constructor(private val satoriAction: SatoriAction) {
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     /**
      * 发送消息
@@ -462,6 +469,7 @@ class MessageAction private constructor(private val satoriAction: SatoriAction) 
 
 class ReactionAction private constructor(private val satoriAction: SatoriAction) {
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     /**
      * 添加表态
@@ -542,6 +550,7 @@ class UserAction private constructor(
     private val satoriAction: SatoriAction
 ) {
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     /**
      * 获取用户信息
@@ -562,6 +571,7 @@ class UserAction private constructor(
 
     class ChannelAction private constructor(private val satoriAction: SatoriAction) {
         private val mapper = jacksonObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
         /**
          * 创建私聊频道
@@ -585,6 +595,7 @@ class UserAction private constructor(
 
 class FriendAction private constructor(private val satoriAction: SatoriAction) {
     private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     /**
      * 获取好友列表

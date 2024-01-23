@@ -15,6 +15,7 @@ See the Mulan PSL v2 for more details.
 package io.github.nyayurn.yutori
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 
@@ -210,6 +211,7 @@ data class Signaling @JvmOverloads constructor(val op: Int, var body: Body? = nu
         @JvmStatic
         fun parse(json: String): Signaling {
             val mapper = jacksonObjectMapper()
+                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
             val node = mapper.readTree(json)
             return when (val op = node["op"].asInt()) {
                 EVENT -> Signaling(op, mapper.readValue<Event>(node["body"].toString()))
