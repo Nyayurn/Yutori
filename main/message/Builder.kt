@@ -148,10 +148,10 @@ class MessageDSLBuilder {
 
     fun message(element: Message) = list.add(element)
     fun message(
-        text: String? = null,
         id: String? = null,
-        forward: Boolean? = null
-    ) = list.add(Message(text, id, forward))
+        forward: Boolean? = null,
+        vararg element: MessageElement
+    ) = list.add(Message(id, forward).apply { children.addAll(element) })
 
     inline fun message(dsl: MessageBuilder.() -> Unit) = message(MessageBuilder().apply(dsl).build())
 
@@ -322,12 +322,9 @@ class MessageDSLBuilder {
 
     @MessageDSL
     class MessageBuilder {
-        var text: String? = null
         var id: String? = null
         var forward: Boolean? = null
-        fun text(lambda: () -> String) {
-            text = lambda()
-        }
+        val elements = mutableListOf<MessageElement>()
 
         fun id(lambda: () -> String) {
             id = lambda()
@@ -337,7 +334,15 @@ class MessageDSLBuilder {
             forward = lambda()
         }
 
-        fun build() = Message(text, id, forward)
+        operator fun set(index: Int, element: MessageElement) {
+            elements[index] = element
+        }
+
+        operator fun plusAssign(element: MessageElement) {
+            elements += element
+        }
+
+        fun build() = Message(id, forward).apply { children.addAll(elements) }
     }
 
     @MessageDSL
@@ -503,10 +508,10 @@ class MessageChainBuilder {
 
     @JvmOverloads
     fun message(
-        text: String? = null,
         id: String? = null,
-        forward: Boolean? = null
-    ) = this.apply { list.add(Message(text, id, forward)) }
+        forward: Boolean? = null,
+        vararg elements: MessageElement
+    ) = this.apply { list.add(Message(id, forward).apply { children.addAll(elements) }) }
 
     fun quote(element: Quote) = this.apply { list.add(element) }
     fun quote(vararg elements: MessageElement) = this.apply { list.add(Quote().apply { children.addAll(elements) }) }
