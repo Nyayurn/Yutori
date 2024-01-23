@@ -29,7 +29,7 @@ annotation class MessageDSL
 
 @MessageDSL
 class MessageDSLBuilder {
-    private val list = mutableListOf<MessageElement>()
+    val list = mutableListOf<MessageElement>()
 
     fun custom(element: Custom) = list.add(element)
     fun custom(text: String) = list.add(Custom(text))
@@ -156,8 +156,10 @@ class MessageDSLBuilder {
     inline fun message(dsl: MessageBuilder.() -> Unit) = message(MessageBuilder().apply(dsl).build())
 
     fun quote(element: Quote) = list.add(element)
-    fun quote(text: String) = list.add(Quote(text))
-    inline fun quote(dsl: () -> String) = quote(Quote(dsl()))
+    fun quote(vararg elements: MessageElement) = list.add(Quote().apply { children.addAll(elements) })
+    inline fun quote(dsl: MessageDSLBuilder.() -> Unit) = quote(Quote().apply {
+        children.addAll(MessageDSLBuilder().apply(dsl).list)
+    })
 
     fun author(element: Author) = list.add(element)
     fun author(
@@ -394,7 +396,7 @@ class MessageDSLBuilder {
  * @property list 消息列表
  */
 class MessageChainBuilder {
-    private val list = mutableListOf<MessageElement>()
+    val list = mutableListOf<MessageElement>()
 
     fun custom(element: Custom) = this.apply { list.add(element) }
     fun custom(text: String) = this.apply { list.add(Custom(text)) }
@@ -507,7 +509,7 @@ class MessageChainBuilder {
     ) = this.apply { list.add(Message(text, id, forward)) }
 
     fun quote(element: Quote) = this.apply { list.add(element) }
-    fun quote(text: String) = this.apply { list.add(Quote(text)) }
+    fun quote(vararg elements: MessageElement) = this.apply { list.add(Quote().apply { children.addAll(elements) }) }
 
     fun author(element: Author) = this.apply { list.add(element) }
 

@@ -16,23 +16,8 @@ package io.github.nyayurn.yutori.message.element
 
 /**
  * 引用
- * @property text 被引用的文本
  */
-class Quote(text: String) : NodeMessageElement("quote") {
-    var text: String
-        get() = (super.children[0] as Text).text
-        set(value) {
-            if (super.children.isEmpty()) {
-                super.children += Text(value)
-            } else {
-                (super.children[0] as Text).text = value
-            }
-        }
-
-    init {
-        this.text = text
-    }
-}
+class Quote : NodeMessageElement("quote")
 
 /**
  * 作者

@@ -15,6 +15,7 @@ See the Mulan PSL v2 for more details.
 package io.github.nyayurn.yutori
 
 import io.github.nyayurn.yutori.message.element.*
+import io.github.nyayurn.yutori.message.element.Message
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
@@ -198,8 +199,9 @@ object MessageUtil {
         for (attr in node.attributes()) this[attr.key] = attr.value
     }
 
-    private fun quote(node: Node) = Quote((node.childNode(0) as TextNode).text()).apply {
+    private fun quote(node: Node): Quote = Quote().apply {
         for (attr in node.attributes()) this[attr.key] = attr.value
+        for (sub in node.childNodes()) parseMessageElement(sub)?.let { this += it }
     }
 
     private fun author(node: Node) = Author().apply {
