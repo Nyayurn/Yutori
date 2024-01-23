@@ -298,7 +298,11 @@ open class Event @JvmOverloads constructor(
     open val operator: User? = null,
     open val role: GuildRole? = null,
     open val user: User? = null
-) : Signaling.Body
+) : Signaling.Body {
+    override fun toString(): String {
+        return "Event(id=$id, type='$type', platform='$platform', selfId='$selfId', timestamp=$timestamp, argv=$argv, button=$button, channel=$channel, guild=$guild, login=$login, member=$member, message=$message, operator=$operator, role=$role, user=$user)"
+    }
+}
 
 /**
  * 分页数据, 参考 https://satori.chat/zh-CN/protocol/api.html#%E5%88%86%E9%A1%B5
