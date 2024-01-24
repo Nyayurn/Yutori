@@ -14,8 +14,6 @@ See the Mulan PSL v2 for more details.
 
 package io.github.nyayurn.yutori
 
-import kotlinx.coroutines.CoroutineScope
-
 fun interface Listener<T : Event> {
     operator fun invoke(actions: Actions, event: T)
 }
@@ -147,17 +145,6 @@ class Satori private constructor(
         withFilter(eventTypeFilter(UserEvents.FRIEND_REQUEST))
     }
 
-    /**
-     * 与 Satori Server 建立 Websocket 连接
-     * @param eventService Satori 事件服务实现类
-     * @param scope 协程作用域
-     */
-    @JvmOverloads
-    fun connect(
-        eventService: SatoriEventService,
-        scope: CoroutineScope? = null
-    ) = eventService.connect(scope)
-
     private fun parseEvent(event: Event) = try {
         when (event.type) {
             GuildEvents.ADDED, GuildEvents.UPDATED, GuildEvents.REMOVED, GuildEvents.REQUEST -> GuildEvent.parse(event)
@@ -205,7 +192,7 @@ class Satori private constructor(
     companion object {
         @JvmStatic
         @JvmOverloads
-        fun of(properties: SatoriProperties, logger: Logger = Slf4jLogger()) = Satori(properties, logger)
+        fun of(properties: SatoriProperties, logger: Logger = Slf4jLogger) = Satori(properties, logger)
 
         @JvmStatic
         @JvmOverloads
@@ -215,12 +202,12 @@ class Satori private constructor(
             path: String = "",
             token: String? = null,
             version: String = "v1",
-            logger: Logger = Slf4jLogger()
+            logger: Logger = Slf4jLogger
         ) = Satori(SimpleSatoriProperties(host, port, path, token, version), logger)
 
         @JvmSynthetic
         @JvmOverloads
-        inline fun of(properties: SatoriProperties, logger: Logger = Slf4jLogger(), apply: Satori.() -> Unit) =
+        inline fun of(properties: SatoriProperties, logger: Logger = Slf4jLogger, apply: Satori.() -> Unit) =
             of(properties, logger).apply { apply() }
 
         @JvmSynthetic
@@ -231,7 +218,7 @@ class Satori private constructor(
             path: String = "",
             token: String? = null,
             version: String = "v1",
-            logger: Logger = Slf4jLogger(),
+            logger: Logger = Slf4jLogger,
             apply: Satori.() -> Unit
         ) = of(host, port, path, token, version, logger).apply { apply() }
     }

@@ -43,6 +43,7 @@ class Actions private constructor(
     @JvmField val reaction: ReactionAction,
     @JvmField val user: UserAction,
     @JvmField val friend: FriendAction,
+    @JvmField val admin: AdminAction,
     val properties: SatoriProperties
 ) {
     companion object {
@@ -54,7 +55,8 @@ class Actions private constructor(
          * @return Bot 实例
          */
         @JvmStatic
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) = Actions(
+        @JvmOverloads
+        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger = Slf4jLogger) = Actions(
             ChannelAction.of(platform, selfId, properties, logger),
             GuildAction.of(platform, selfId, properties, logger),
             LoginAction.of(platform, selfId, properties, logger),
@@ -62,6 +64,7 @@ class Actions private constructor(
             ReactionAction.of(platform, selfId, properties, logger),
             UserAction.of(platform, selfId, properties, logger),
             FriendAction.of(platform, selfId, properties, logger),
+            AdminAction.of(properties, logger),
             properties
         )
 
@@ -72,7 +75,8 @@ class Actions private constructor(
          * @return Bot 实例
          */
         @JvmStatic
-        fun of(event: Event, properties: SatoriProperties, logger: Logger) =
+        @JvmOverloads
+        fun of(event: Event, properties: SatoriProperties, logger: Logger = Slf4jLogger) =
             of(event.platform, event.selfId, properties, logger)
     }
 }
@@ -629,6 +633,72 @@ class FriendAction private constructor(private val satoriAction: SatoriAction) {
     }
 }
 
+
+class AdminAction private constructor(
+    @JvmField val login: LoginAction,
+    @JvmField val webhook: WebhookAction
+) {
+    private val mapper = jacksonObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
+    companion object {
+        fun of(properties: SatoriProperties, logger: Logger) =
+            AdminAction(
+                LoginAction.of(properties, logger),
+                WebhookAction.of(properties, logger)
+            )
+    }
+
+
+    class LoginAction private constructor(private val satoriAction: SatoriAction) {
+        private val mapper = jacksonObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+
+        /**
+         * 获取登录信息列表
+         */
+        suspend fun list(): List<Login> {
+            return mapper.readValue(satoriAction.send("list"))
+        }
+
+        companion object {
+            fun of(properties: SatoriProperties, logger: Logger) =
+                LoginAction(SatoriAction(null, null, properties, "login", logger))
+        }
+    }
+
+
+    class WebhookAction private constructor(private val satoriAction: SatoriAction) {
+        /**
+         * 创建 WebHook
+         * @param url WebHook 地址
+         * @param token 鉴权令牌
+         */
+        @JvmOverloads
+        suspend fun create(url: String, token: String? = null) {
+            satoriAction.send("list") {
+                put("url", url)
+                put("token", token)
+            }
+        }
+
+        /**
+         * 移除 WebHook
+         * @param url WebHook 地址
+         */
+        suspend fun delete(url: String) {
+            satoriAction.send("approve") {
+                put("url", url)
+            }
+        }
+
+        companion object {
+            fun of(properties: SatoriProperties, logger: Logger) =
+                WebhookAction(SatoriAction(null, null, properties, "webhook", logger))
+        }
+    }
+}
+
 /**
  * Satori Action 实现
  * @property platform 平台
@@ -637,9 +707,9 @@ class FriendAction private constructor(private val satoriAction: SatoriAction) {
  * @property resource 资源路径
  * @property logger 日志接口
  */
-class SatoriAction @JvmOverloads constructor(
-    private val platform: String? = null,
-    private val selfId: String? = null,
+class SatoriAction(
+    private val platform: String?,
+    private val selfId: String?,
     private val properties: SatoriProperties,
     private val resource: String,
     private val logger: Logger

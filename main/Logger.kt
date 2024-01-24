@@ -39,7 +39,7 @@ interface Logger {
     fun trace(msg: String, clazz: Class<*>)
 }
 
-class Slf4jLogger : Logger {
+object Slf4jLogger : Logger {
     override fun error(msg: String, clazz: Class<*>) = LoggerFactory.getLogger(clazz).error(msg)
     override fun warn(msg: String, clazz: Class<*>) = LoggerFactory.getLogger(clazz).warn(msg)
     override fun info(msg: String, clazz: Class<*>) = LoggerFactory.getLogger(clazz).info(msg)

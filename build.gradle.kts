@@ -22,6 +22,8 @@ repositories {
 dependencies {
     api("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     api("org.jsoup:jsoup:$jsoupVersion")
+    api("io.ktor:ktor-server-core:$ktorVersion")
+    api("io.ktor:ktor-server-cio:$ktorVersion")
     api("io.ktor:ktor-client-core:$ktorVersion")
     api("io.ktor:ktor-client-cio:$ktorVersion")
     api("io.ktor:ktor-client-websockets:$ktorVersion")
