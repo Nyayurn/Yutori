@@ -14,14 +14,10 @@ See the Mulan PSL v2 for more details.
 
 package io.github.nyayurn.yutori
 
-import io.ktor.client.*
-import io.ktor.client.plugins.websocket.*
-import io.ktor.http.*
-import io.ktor.websocket.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 
 fun interface Listener<T : Event> {
-    operator fun invoke(bot: Bot, event: T)
+    operator fun invoke(actions: Actions, event: T)
 }
 
 class Satori private constructor(
@@ -153,18 +149,14 @@ class Satori private constructor(
 
     /**
      * 与 Satori Server 建立 Websocket 连接
-     * @param name Websocket 客户端的名称, 用于在日志打印时区分
+     * @param eventService Satori 事件服务实现类
      * @param scope 协程作用域
-     * @param onWebSocketException 连接异常时的回调函数
-     * @param onEventException 消息异常时的回调函数
      */
     @JvmOverloads
     fun connect(
-        name: String = "Satori",
-        scope: CoroutineScope? = null,
-        onWebSocketException: (SatoriWebSocketClient.(Throwable) -> Unit) = {},
-        onEventException: (SatoriWebSocketClient.(Throwable) -> Unit) = {},
-    ) = SatoriWebSocketClient(this, name, onWebSocketException, onEventException, logger).apply { connect(scope) }
+        eventService: SatoriEventService,
+        scope: CoroutineScope? = null
+    ) = eventService.connect(scope)
 
     private fun parseEvent(event: Event) = try {
         when (event.type) {
@@ -187,27 +179,27 @@ class Satori private constructor(
 
     fun runEvent(event: Event) {
         try {
-            val bot = Bot.of(event, properties, logger)
+            val actions = Actions.of(event, properties, logger)
             val newEvent = parseEvent(event)
-            runEvent(onEvent, bot, newEvent)
+            runEvent(onEvent, actions, newEvent)
             when (newEvent) {
-                is GuildEvent -> runEvent(onGuild, bot, newEvent)
-                is GuildMemberEvent -> runEvent(onMember, bot, newEvent)
-                is GuildRoleEvent -> runEvent(onRole, bot, newEvent)
-                is InteractionButtonEvent -> runEvent(onButton, bot, newEvent)
-                is InteractionCommandEvent -> runEvent(onCommand, bot, newEvent)
-                is LoginEvent -> runEvent(onLogin, bot, newEvent)
-                is MessageEvent -> runEvent(onMessage, bot, newEvent)
-                is ReactionEvent -> runEvent(onReaction, bot, newEvent)
-                is UserEvent -> runEvent(onUser, bot, newEvent)
+                is GuildEvent -> runEvent(onGuild, actions, newEvent)
+                is GuildMemberEvent -> runEvent(onMember, actions, newEvent)
+                is GuildRoleEvent -> runEvent(onRole, actions, newEvent)
+                is InteractionButtonEvent -> runEvent(onButton, actions, newEvent)
+                is InteractionCommandEvent -> runEvent(onCommand, actions, newEvent)
+                is LoginEvent -> runEvent(onLogin, actions, newEvent)
+                is MessageEvent -> runEvent(onMessage, actions, newEvent)
+                is ReactionEvent -> runEvent(onReaction, actions, newEvent)
+                is UserEvent -> runEvent(onUser, actions, newEvent)
             }
         } catch (e: EventParsingException) {
             logger.error("$e, event: $event", this::class.java)
         }
     }
 
-    private fun <T : Event> runEvent(list: List<ListenerContext<T>>, bot: Bot, event: T) {
-        for (context in list) context.run(bot, event)
+    private fun <T : Event> runEvent(list: List<ListenerContext<T>>, actions: Actions, event: T) {
+        for (context in list) context.run(actions, event)
     }
 
     companion object {
@@ -246,114 +238,11 @@ class Satori private constructor(
 }
 
 class ListenerContext<T : Event>(private val listener: Listener<T>) {
-    private val filters = mutableListOf<(Bot, Event) -> Boolean>()
+    private val filters = mutableListOf<(Actions, Event) -> Boolean>()
 
-    fun withFilter(filter: (Bot, Event) -> Boolean) = this.apply { filters += filter }
-    fun run(bot: Bot, event: T) {
-        for (filter in filters) if (!filter(bot, event)) return
-        listener(bot, event)
-    }
-}
-
-class SatoriWebSocketClient(
-    private val satori: Satori,
-    private val name: String,
-    private val onWebSocketException: (SatoriWebSocketClient.(Throwable) -> Unit),
-    private val onEventException: (SatoriWebSocketClient.(Throwable) -> Unit),
-    private val logger: Logger
-) : AutoCloseable {
-    private var sequence: Number? = null
-    private lateinit var coroutineScope: CoroutineScope
-    private val client = HttpClient {
-        install(WebSockets)
-    }
-
-    @OptIn(DelicateCoroutinesApi::class)
-    fun connect(scope: CoroutineScope?) {
-        (scope ?: GlobalScope).launch {
-            coroutineScope = this
-            run()
-        }
-    }
-
-    override fun close() {
-        client.close()
-        coroutineScope.cancel()
-    }
-
-    private suspend fun run() = try {
-        client.webSocket(
-            HttpMethod.Get,
-            satori.properties.host,
-            satori.properties.port,
-            "${satori.properties.path}/${satori.properties.version}/events"
-        ) {
-            logger.info("[$name]: 成功建立 WebSocket 连接", this::class.java)
-            launch { sendIdentity(this@webSocket) }
-            for (frame in incoming) try {
-                frame as? Frame.Text ?: continue
-                val signaling = Signaling.parse(frame.readText())
-                onEvent(signaling)
-            } catch (e: Exception) {
-                logger.warn(
-                    "[$name]: 处理事件时出错(${(frame as Frame.Text).readText()}): ${e.localizedMessage}",
-                    this::class.java
-                )
-                onEventException(e)
-            }
-        }
-    } catch (e: Exception) {
-        client.close()
-        logger.warn("[$name]: WebSocket 连接断开: ${e.localizedMessage}", this::class.java)
-        onWebSocketException(e)
-    }
-
-    private suspend fun sendIdentity(session: DefaultClientWebSocketSession) {
-        val token = satori.properties.token
-        val content = jsonObj {
-            put("op", Signaling.IDENTIFY)
-            if (token != null || sequence != null) putJsonObj("body") {
-                put("token", token)
-                put("sequence", sequence)
-            }
-        }
-        logger.info("[$name]: 发送身份验证: $content", this::class.java)
-        session.send(content)
-    }
-
-    private fun DefaultClientWebSocketSession.onEvent(signaling: Signaling) {
-        when (signaling.op) {
-            Signaling.READY -> {
-                val ready = signaling.body as Ready
-                logger.info("[$name]: 成功建立事件推送(${ready.logins.size}): \n${
-                    ready.logins.joinToString(
-                        "\n"
-                    ) { "{platform: ${it.platform}, selfId: ${it.selfId}}" }
-                }", this::class.java)
-                // 心跳
-                launch {
-                    val content = jsonObj { put("op", Signaling.PING) }
-                    while (true) {
-                        delay(10000)
-                        send(content)
-                    }
-                }
-            }
-
-            Signaling.EVENT -> launch { sendEvent(signaling) }
-            Signaling.PONG -> logger.debug("[$name]: 收到 PONG", this::class.java)
-            else -> logger.error("Unsupported $signaling", this::class.java)
-        }
-    }
-
-    private fun sendEvent(signaling: Signaling) {
-        val body = signaling.body as Event
-        logger.info(
-            "[$name]: 接收事件: platform: ${body.platform}, selfId: ${body.selfId}, type: ${body.type}",
-            this::class.java
-        )
-        logger.debug("[$name]: 事件详细信息: $body", this::class.java)
-        sequence = body.id
-        satori.runEvent(body)
+    fun withFilter(filter: (Actions, Event) -> Boolean) = this.apply { filters += filter }
+    fun run(actions: Actions, event: T) {
+        for (filter in filters) if (!filter(actions, event)) return
+        listener(actions, event)
     }
 }

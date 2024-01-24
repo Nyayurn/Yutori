@@ -18,21 +18,21 @@ package io.github.nyayurn.yutori
  * 事件过滤器
  * @param type 事件
  */
-fun eventTypeFilter(type: String) = { _: Bot, event: Event -> event.type == type }
+fun eventTypeFilter(type: String) = { _: Actions, event: Event -> event.type == type }
 
 /**
  * 平台过滤器
  * @param platform 平台
  */
-fun platformFilter(platform: String) = { _: Bot, event: Event -> event.platform == platform }
+fun platformFilter(platform: String) = { _: Actions, event: Event -> event.platform == platform }
 
 /**
  * 自身 ID 过滤器
  * @param selfId 自身 ID
  */
-fun selfIdFilter(selfId: String) = { _: Bot, event: Event -> event.selfId == selfId }
+fun selfIdFilter(selfId: String) = { _: Actions, event: Event -> event.selfId == selfId }
 
 /**
  * 自身消息过滤器
  */
-fun selfMessageFilter() = { _: Bot, event: Event -> event.user?.id != event.selfId }
+fun selfMessageFilter() = { _: Actions, event: Event -> event.user?.id != event.selfId }

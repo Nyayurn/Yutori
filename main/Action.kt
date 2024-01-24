@@ -35,7 +35,7 @@ import io.ktor.http.*
  * @property friend 好友 API
  * @property properties 配置信息, 供使用者获取
  */
-class Bot private constructor(
+class Actions private constructor(
     @JvmField val channel: ChannelAction,
     @JvmField val guild: GuildAction,
     @JvmField val login: LoginAction,
@@ -54,7 +54,7 @@ class Bot private constructor(
          * @return Bot 实例
          */
         @JvmStatic
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) = Bot(
+        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) = Actions(
             ChannelAction.of(platform, selfId, properties, logger),
             GuildAction.of(platform, selfId, properties, logger),
             LoginAction.of(platform, selfId, properties, logger),
