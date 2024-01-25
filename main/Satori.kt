@@ -12,7 +12,7 @@ See the Mulan PSL v2 for more details.
 
 @file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
-package io.github.nyayurn.yutori
+package com.github.nyayurn.yutori
 
 fun interface Listener<T : Event> {
     operator fun invoke(actions: Actions, event: T)

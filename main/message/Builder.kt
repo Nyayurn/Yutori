@@ -12,9 +12,9 @@ See the Mulan PSL v2 for more details.
 
 @file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
-package io.github.nyayurn.yutori.message
+package com.github.nyayurn.yutori.message
 
-import io.github.nyayurn.yutori.message.element.*
+import com.github.nyayurn.yutori.message.element.*
 
 /**
  * 消息 DSL 构造器, 供 Kotlin 使用者使用

@@ -12,7 +12,7 @@ See the Mulan PSL v2 for more details.
 
 @file:Suppress("unused", "UNUSED_PARAMETER")
 
-package io.github.nyayurn.yutori
+package com.github.nyayurn.yutori
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.DeserializationFeature

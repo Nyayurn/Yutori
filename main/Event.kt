@@ -10,7 +10,7 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
  */
 
-package io.github.nyayurn.yutori
+package com.github.nyayurn.yutori
 
 import com.fasterxml.jackson.annotation.JsonProperty
 

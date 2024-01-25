@@ -1,4 +1,4 @@
-package io.github.nyayurn.yutori.message.element
+package com.github.nyayurn.yutori.message.element
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

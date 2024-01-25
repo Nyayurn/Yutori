@@ -12,10 +12,9 @@ See the Mulan PSL v2 for more details.
 
 @file:Suppress("unused")
 
-package io.github.nyayurn.yutori
+package com.github.nyayurn.yutori
 
-import io.github.nyayurn.yutori.message.element.*
-import io.github.nyayurn.yutori.message.element.Message
+import com.github.nyayurn.yutori.message.element.*
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node

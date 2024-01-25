@@ -12,9 +12,9 @@ See the Mulan PSL v2 for more details.
 
 @file:Suppress("unused")
 
-package io.github.nyayurn.yutori
+package com.github.nyayurn.yutori
 
-import io.github.nyayurn.yutori.Level.*
+import com.github.nyayurn.yutori.Level.*
 import org.slf4j.LoggerFactory
 
 enum class Level {

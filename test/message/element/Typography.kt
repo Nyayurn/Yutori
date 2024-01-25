@@ -1,4 +1,4 @@
-package io.github.nyayurn.yutori.message.element
+package com.github.nyayurn.yutori.message.element
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -16,7 +16,7 @@ class TypeTest {
     fun message() {
         Assertions.assertEquals(
             "<message id=\"123456\" forward>message</message>",
-            Message("message", "123456", true).toString()
+            Message("123456", true).apply { this += Text("message") }.toString()
         )
     }
 
