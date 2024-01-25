@@ -94,7 +94,7 @@ class WebSocketEventService @JvmOverloads constructor(
                 properties.port,
                 "${properties.path}/${properties.version}/events"
             ) {
-                logger.info("[$name]: 成功建立 WebSocket 连接", this::class.java)
+                logger.info("[$name]: 成功建立 WebSocket 连接", this@WebSocketEventService::class.java)
                 isConnected = true
                 launch { sendIdentity(this@webSocket) }
                 for (frame in incoming) try {
@@ -104,7 +104,7 @@ class WebSocketEventService @JvmOverloads constructor(
                 } catch (e: Exception) {
                     logger.warn(
                         "[$name]: 处理事件时出错(${(frame as Frame.Text).readText()}): ${e.localizedMessage}",
-                        this::class.java
+                        this@WebSocketEventService::class.java
                     )
                     e.printStackTrace()
                 }
@@ -115,9 +115,9 @@ class WebSocketEventService @JvmOverloads constructor(
             isConnected = false
             // 重连
             baseScope.launch {
-                logger.info("[$name]: 将在5秒后尝试重新连接", this::class.java)
+                logger.info("[$name]: 将在5秒后尝试重新连接", this@WebSocketEventService::class.java)
                 delay(5000)
-                logger.info("[$name]: 尝试重新连接", this::class.java)
+                logger.info("[$name]: 尝试重新连接", this@WebSocketEventService::class.java)
                 suspendConnect()
             }
         }
@@ -144,7 +144,7 @@ class WebSocketEventService @JvmOverloads constructor(
                     ready.logins.joinToString(
                         "\n"
                     ) { "{platform: ${it.platform}, selfId: ${it.selfId}}" }
-                }", this::class.java)
+                }", this@WebSocketEventService::class.java)
                 // 心跳
                 launch {
                     val content = jsonObj { put("op", Signaling.PING) }
@@ -156,8 +156,8 @@ class WebSocketEventService @JvmOverloads constructor(
             }
 
             Signaling.EVENT -> launch { sendEvent(signaling) }
-            Signaling.PONG -> logger.debug("[$name]: 收到 PONG", this::class.java)
-            else -> logger.error("Unsupported $signaling", this::class.java)
+            Signaling.PONG -> logger.debug("[$name]: 收到 PONG", this@WebSocketEventService::class.java)
+            else -> logger.error("Unsupported $signaling", this@WebSocketEventService::class.java)
         }
     }
 
@@ -260,7 +260,7 @@ class WebHookEventService @JvmOverloads constructor(
                         call.response.status(HttpStatusCode.OK)
                     } catch (e: Exception) {
                         logger.warn(
-                            "[$name]: 处理事件时出错(${body}): ${e.localizedMessage}", this::class.java
+                            "[$name]: 处理事件时出错(${body}): ${e.localizedMessage}", this@WebHookEventService::class.java
                         )
                         e.printStackTrace()
                         call.response.status(HttpStatusCode.InternalServerError)
