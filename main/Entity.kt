@@ -316,12 +316,12 @@ data class PaginatedData<T> @JvmOverloads constructor(
 )
 
 /**
- * Satori 配置
- * @property host 连接主机
- * @property port 端口
- * @property path 路径
- * @property token Token
- * @property version 协议版本
+ * Satori Server 配置接口
+ * @property host Satori Server 主机
+ * @property port Satori Server 端口
+ * @property path Satori Server 路径
+ * @property token Satori Server 鉴权令牌
+ * @property version Satori Server 协议版本
  */
 interface SatoriProperties {
     val host: String
@@ -332,12 +332,22 @@ interface SatoriProperties {
 }
 
 /**
- * 简易 Satori 配置实现类
- * @property host 连接主机
- * @property port 端口
- * @property path 路径
- * @property token Token
- * @property version 协议版本
+ * Satori WebHook 配置接口
+ * @property serverHost WebHook Server 监听主机
+ * @property serverPort WebHook Server 监听端口
+ */
+interface SatoriWebHookProperties : SatoriProperties {
+    val serverHost: String
+    val serverPort: Int
+}
+
+/**
+ * 简易 Satori Server 配置实现类
+ * @property host Satori Server 主机
+ * @property port Satori Server 端口
+ * @property path Satori Server 路径
+ * @property token Satori Server 鉴权令牌
+ * @property version Satori Server 协议版本
  */
 data class SimpleSatoriProperties @JvmOverloads constructor(
     override val host: String = "127.0.0.1",
@@ -346,3 +356,23 @@ data class SimpleSatoriProperties @JvmOverloads constructor(
     override val token: String? = null,
     override val version: String = "v1"
 ) : SatoriProperties
+
+/**
+ * 简易 Satori WebHook 配置实现类
+ * @property serverHost WebHook Server 监听主机
+ * @property serverPort WebHook Server 监听端口
+ * @property host Satori Server 主机
+ * @property port Satori Server 端口
+ * @property path Satori Server 路径
+ * @property token Satori Server 鉴权令牌
+ * @property version Satori Server 协议版本
+ */
+data class SimpleSatoriWebHookProperties @JvmOverloads constructor(
+    override val serverHost: String = "0.0.0.0",
+    override val serverPort: Int = 8080,
+    override val host: String = "127.0.0.1",
+    override val port: Int = 5500,
+    override val path: String = "",
+    override val token: String? = null,
+    override val version: String = "v1"
+) : SatoriWebHookProperties

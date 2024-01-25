@@ -61,12 +61,15 @@ abstract class CoroutineSatoriEventService(private val scope: CoroutineScope) : 
 /**
  * Satori 事件服务的 WebSocket 实现
  * @param satori Satori 实例
+ * @param properties Satori Server 配置
  * @param name 用于区分不同 Satori 事件服务的名称
- * @param logger 日志类实现
+ * @param logger 日志接口
+ * @param scope 协程作用域
  */
 @OptIn(DelicateCoroutinesApi::class)
 class WebSocketEventService @JvmOverloads constructor(
-    private val satori: Satori,
+    val satori: Satori,
+    private val properties: SatoriProperties,
     private val name: String = "Satori",
     private val logger: Logger = Slf4jLogger,
     scope: CoroutineScope = GlobalScope
@@ -87,9 +90,9 @@ class WebSocketEventService @JvmOverloads constructor(
         try {
             client.webSocket(
                 HttpMethod.Get,
-                satori.properties.host,
-                satori.properties.port,
-                "${satori.properties.path}/${satori.properties.version}/events"
+                properties.host,
+                properties.port,
+                "${properties.path}/${properties.version}/events"
             ) {
                 logger.info("[$name]: 成功建立 WebSocket 连接", this::class.java)
                 isConnected = true
@@ -110,6 +113,7 @@ class WebSocketEventService @JvmOverloads constructor(
             logger.warn("[$name]: WebSocket 连接断开: ${e.localizedMessage}", this::class.java)
             e.printStackTrace()
             isConnected = false
+            // 重连
             baseScope.launch {
                 logger.info("[$name]: 将在5秒后尝试重新连接", this::class.java)
                 delay(5000)
@@ -120,7 +124,7 @@ class WebSocketEventService @JvmOverloads constructor(
     }
 
     private suspend fun sendIdentity(session: DefaultClientWebSocketSession) {
-        val token = satori.properties.token
+        val token = properties.token
         val content = jsonObj {
             put("op", Signaling.IDENTIFY)
             if (token != null || sequence != null) putJsonObj("body") {
@@ -158,34 +162,80 @@ class WebSocketEventService @JvmOverloads constructor(
     }
 
     private fun sendEvent(signaling: Signaling) {
-        val body = signaling.body as Event
+        val event = signaling.body as Event
         logger.info(
-            "[$name]: 接收事件: platform: ${body.platform}, selfId: ${body.selfId}, type: ${body.type}",
+            "[$name]: 接收事件: platform: ${event.platform}, selfId: ${event.selfId}, type: ${event.type}",
             this::class.java
         )
-        logger.debug("[$name]: 事件详细信息: $body", this::class.java)
-        sequence = body.id
-        satori.runEvent(body)
+        logger.debug("[$name]: 事件详细信息: $event", this::class.java)
+        sequence = event.id
+        satori.runEvent(event, properties)
+    }
+
+    companion object {
+        @JvmStatic
+        @JvmOverloads
+        fun of(
+            properties: SatoriProperties,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope
+        ) = WebSocketEventService(Satori(logger), properties, name, logger, scope)
+
+        @JvmStatic
+        @JvmOverloads
+        fun of(
+            host: String = "127.0.0.1",
+            port: Int = 5500,
+            token: String? = null,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope
+        ) = WebSocketEventService(
+            Satori(logger), SimpleSatoriProperties(host, port, token = token), name, logger, scope
+        )
+
+        @JvmSynthetic
+        @JvmOverloads
+        inline fun of(
+            properties: SatoriProperties,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope,
+            apply: Satori.() -> Unit
+        ) = of(properties, name, logger, scope).apply { satori.apply() }
+
+        @JvmSynthetic
+        @JvmOverloads
+        inline fun of(
+            host: String = "127.0.0.1",
+            port: Int = 5500,
+            token: String? = null,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope,
+            apply: Satori.() -> Unit
+        ) = of(host, port, token, name, logger, scope).apply { satori.apply() }
     }
 }
 
 /**
  * Satori 事件服务的 WebHook 实现
  * @param satori Satori 实例
+ * @param properties Satori WebHook 配置
  * @param name 用于区分不同 Satori 事件服务的名称
- * @param logger 日志类实现
+ * @param logger 日志接口
+ * @param scope 协程作用域
  */
 @OptIn(DelicateCoroutinesApi::class)
 class WebHookEventService @JvmOverloads constructor(
-    private val satori: Satori,
+    val satori: Satori,
+    private val properties: SatoriWebHookProperties,
     private val name: String = "Satori",
     private val logger: Logger = Slf4jLogger,
-    private val port: Int = 80,
-    private val host: String = "0.0.0.0",
     scope: CoroutineScope = GlobalScope
 ) : CoroutineSatoriEventService(scope) {
     private var client: ApplicationEngine? = null
-    private val adminAction = AdminAction.of(satori.properties, logger)
 
     override fun close() {
         client?.stop()
@@ -193,11 +243,11 @@ class WebHookEventService @JvmOverloads constructor(
     }
 
     override suspend fun suspendConnect() {
-        client = embeddedServer(CIO, port, host) {
+        client = embeddedServer(CIO, properties.serverPort, properties.serverHost) {
             routing {
                 post("/") {
                     val authorization = call.request.headers["Authorization"]
-                    if (authorization != satori.properties.token) {
+                    if (authorization != properties.token) {
                         call.response.status(HttpStatusCode.Unauthorized)
                         return@post
                     }
@@ -219,7 +269,10 @@ class WebHookEventService @JvmOverloads constructor(
             }
         }.start()
         logger.info("[$name]: 成功启动 HTTP 服务器", this::class.java)
-        adminAction.webhook.create("http://$host:$port", satori.properties.token)
+        AdminAction.of(properties, logger).webhook.create(
+            "http://${properties.serverHost}:${properties.serverPort}",
+            properties.token
+        )
     }
 
     private fun sendEvent(event: Event) {
@@ -228,6 +281,52 @@ class WebHookEventService @JvmOverloads constructor(
             this::class.java
         )
         logger.debug("[$name]: 事件详细信息: $event", this::class.java)
-        satori.runEvent(event)
+        satori.runEvent(event, properties)
+    }
+
+    companion object {
+        @JvmStatic
+        @JvmOverloads
+        fun of(
+            properties: SatoriWebHookProperties,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope
+        ) = WebHookEventService(Satori(logger), properties, name, logger, scope)
+
+        @JvmStatic
+        @JvmOverloads
+        fun of(
+            host: String = "127.0.0.1",
+            port: Int = 5500,
+            token: String? = null,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope
+        ) = WebHookEventService(
+            Satori(logger), SimpleSatoriWebHookProperties(host, port, token = token), name, logger, scope
+        )
+
+        @JvmSynthetic
+        @JvmOverloads
+        inline fun of(
+            properties: SatoriWebHookProperties,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope,
+            apply: Satori.() -> Unit
+        ) = of(properties, name, logger, scope).apply { satori.apply() }
+
+        @JvmSynthetic
+        @JvmOverloads
+        inline fun of(
+            host: String = "127.0.0.1",
+            port: Int = 5500,
+            token: String? = null,
+            name: String = "Satori",
+            logger: Logger = Slf4jLogger,
+            scope: CoroutineScope = GlobalScope,
+            apply: Satori.() -> Unit
+        ) = of(host, port, token, name, logger, scope).apply { satori.apply() }
     }
 }

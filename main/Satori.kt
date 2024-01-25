@@ -18,10 +18,7 @@ fun interface Listener<T : Event> {
     operator fun invoke(actions: Actions, event: T)
 }
 
-class Satori private constructor(
-    val properties: SatoriProperties,
-    private val logger: Logger
-) {
+class Satori(private val logger: Logger) {
     val onEvent = mutableListOf<ListenerContext<Event>>()
     val onGuild = mutableListOf<ListenerContext<GuildEvent>>()
     val onMember = mutableListOf<ListenerContext<GuildMemberEvent>>()
@@ -164,7 +161,7 @@ class Satori private constructor(
         throw EventParsingException(e)
     }
 
-    fun runEvent(event: Event) {
+    fun runEvent(event: Event, properties: SatoriProperties) {
         try {
             val actions = Actions.of(event, properties, logger)
             val newEvent = parseEvent(event)
@@ -187,40 +184,6 @@ class Satori private constructor(
 
     private fun <T : Event> runEvent(list: List<ListenerContext<T>>, actions: Actions, event: T) {
         for (context in list) context.run(actions, event)
-    }
-
-    companion object {
-        @JvmStatic
-        @JvmOverloads
-        fun of(properties: SatoriProperties, logger: Logger = Slf4jLogger) = Satori(properties, logger)
-
-        @JvmStatic
-        @JvmOverloads
-        fun of(
-            host: String = "127.0.0.1",
-            port: Int = 5500,
-            path: String = "",
-            token: String? = null,
-            version: String = "v1",
-            logger: Logger = Slf4jLogger
-        ) = Satori(SimpleSatoriProperties(host, port, path, token, version), logger)
-
-        @JvmSynthetic
-        @JvmOverloads
-        inline fun of(properties: SatoriProperties, logger: Logger = Slf4jLogger, apply: Satori.() -> Unit) =
-            of(properties, logger).apply { apply() }
-
-        @JvmSynthetic
-        @JvmOverloads
-        inline fun of(
-            host: String = "127.0.0.1",
-            port: Int = 5500,
-            path: String = "",
-            token: String? = null,
-            version: String = "v1",
-            logger: Logger = Slf4jLogger,
-            apply: Satori.() -> Unit
-        ) = of(host, port, path, token, version, logger).apply { apply() }
     }
 }
 
