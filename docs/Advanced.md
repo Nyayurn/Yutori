@@ -35,7 +35,10 @@ val koishiClient = WebSocketEventService.of("koishi") {
 
 # 消息构建方式
 
-## 链式构建
+!!! warning
+本条目可能已经过时
+
+## 链式构建(推荐 Java 使用)
 
 ```java
 public class Main {
@@ -55,9 +58,6 @@ public class Main {
 ```
 
 ## DSL (仅 Kotlin)
-
-!!! warning
-    本条目可能已经过时
 
 DSL 提供多种语法, 根据自己喜好选择即可
 
