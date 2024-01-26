@@ -68,8 +68,8 @@ abstract class CoroutineSatoriEventService(private val scope: CoroutineScope) : 
 @OptIn(DelicateCoroutinesApi::class)
 class WebSocketEventService @JvmOverloads constructor(
     val container: ListenersContainer,
-    private val properties: SatoriProperties,
-    private val name: String = "Satori",
+    val properties: SatoriProperties,
+    val name: String = "Satori",
     scope: CoroutineScope = GlobalScope
 ) : CoroutineSatoriEventService(scope) {
     private var sequence: Number? = null
@@ -239,8 +239,8 @@ class WebSocketEventService @JvmOverloads constructor(
 @OptIn(DelicateCoroutinesApi::class)
 class WebHookEventService @JvmOverloads constructor(
     val container: ListenersContainer,
-    private val properties: SatoriWebHookProperties,
-    private val name: String = "Satori",
+    val properties: SatoriWebHookProperties,
+    val name: String = "Satori",
     scope: CoroutineScope = GlobalScope
 ) : CoroutineSatoriEventService(scope) {
     private var client: ApplicationEngine? = null
