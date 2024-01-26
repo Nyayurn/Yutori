@@ -53,19 +53,19 @@ class Actions private constructor(
          * @param platform 平台
          * @param selfId 自己 ID
          * @param properties 配置
-         * @return Bot 实例
          */
         @JvmStatic
-        @JvmOverloads
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger = Slf4jLogger) = Actions(
-            ChannelAction.of(platform, selfId, properties, logger),
-            GuildAction.of(platform, selfId, properties, logger),
-            LoginAction.of(platform, selfId, properties, logger),
-            MessageAction.of(platform, selfId, properties, logger),
-            ReactionAction.of(platform, selfId, properties, logger),
-            UserAction.of(platform, selfId, properties, logger),
-            FriendAction.of(platform, selfId, properties, logger),
-            AdminAction.of(properties, logger),
+        fun of(
+            platform: String, selfId: String, properties: SatoriProperties
+        ) = Actions(
+            ChannelAction.of(platform, selfId, properties),
+            GuildAction.of(platform, selfId, properties),
+            LoginAction.of(platform, selfId, properties),
+            MessageAction.of(platform, selfId, properties),
+            ReactionAction.of(platform, selfId, properties),
+            UserAction.of(platform, selfId, properties),
+            FriendAction.of(platform, selfId, properties),
+            AdminAction.of(properties),
             properties
         )
 
@@ -73,17 +73,13 @@ class Actions private constructor(
          * 工厂方法
          * @param event 事件
          * @param properties 配置
-         * @return Bot 实例
          */
         @JvmStatic
-        @JvmOverloads
-        fun of(event: Event, properties: SatoriProperties, logger: Logger = Slf4jLogger) =
-            of(event.platform, event.selfId, properties, logger)
+        fun of(event: Event, properties: SatoriProperties) = of(event.platform, event.selfId, properties)
     }
 }
 
 class ChannelAction private constructor(private val satoriAction: SatoriAction) {
-
     /**
      * 获取群组频道
      * @param channelId 频道 ID
@@ -142,8 +138,8 @@ class ChannelAction private constructor(private val satoriAction: SatoriAction) 
     }
 
     companion object {
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-            ChannelAction(SatoriAction(platform, selfId, properties, "channel", logger))
+        fun of(platform: String, selfId: String, properties: SatoriProperties) =
+            ChannelAction(SatoriAction(platform, selfId, properties, "channel"))
     }
 }
 
@@ -188,10 +184,10 @@ class GuildAction private constructor(
     }
 
     companion object {
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) = GuildAction(
-            MemberAction.of(platform, selfId, properties, logger),
-            RoleAction.of(platform, selfId, properties, logger),
-            SatoriAction(platform, selfId, properties, "guild", logger)
+        fun of(platform: String, selfId: String, properties: SatoriProperties) = GuildAction(
+            MemberAction.of(platform, selfId, properties),
+            RoleAction.of(platform, selfId, properties),
+            SatoriAction(platform, selfId, properties, "guild")
         )
     }
 
@@ -255,9 +251,9 @@ class GuildAction private constructor(
         }
 
         companion object {
-            fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) = MemberAction(
-                RoleAction.of(platform, selfId, properties, logger),
-                SatoriAction(platform, selfId, properties, "guild.member", logger)
+            fun of(platform: String, selfId: String, properties: SatoriProperties) = MemberAction(
+                RoleAction.of(platform, selfId, properties),
+                SatoriAction(platform, selfId, properties, "guild.member")
             )
         }
 
@@ -291,8 +287,8 @@ class GuildAction private constructor(
             }
 
             companion object {
-                fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-                    RoleAction(SatoriAction(platform, selfId, properties, "guild.member.role", logger))
+                fun of(platform: String, selfId: String, properties: SatoriProperties) =
+                    RoleAction(SatoriAction(platform, selfId, properties, "guild.member.role"))
             }
         }
     }
@@ -350,8 +346,8 @@ class GuildAction private constructor(
         }
 
         companion object {
-            fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-                RoleAction(SatoriAction(platform, selfId, properties, "guild.role", logger))
+            fun of(platform: String, selfId: String, properties: SatoriProperties) =
+                RoleAction(SatoriAction(platform, selfId, properties, "guild.role"))
         }
     }
 }
@@ -363,8 +359,8 @@ class LoginAction private constructor(private val satoriAction: SatoriAction) {
     suspend fun get(): Login = satoriAction.sendWithSerialize("get")
 
     companion object {
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-            LoginAction(SatoriAction(platform, selfId, properties, "login", logger))
+        fun of(platform: String, selfId: String, properties: SatoriProperties) =
+            LoginAction(SatoriAction(platform, selfId, properties, "login"))
     }
 }
 
@@ -452,8 +448,8 @@ class MessageAction private constructor(private val satoriAction: SatoriAction) 
     }
 
     companion object {
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-            MessageAction(SatoriAction(platform, selfId, properties, "message", logger))
+        fun of(platform: String, selfId: String, properties: SatoriProperties) =
+            MessageAction(SatoriAction(platform, selfId, properties, "message"))
     }
 }
 
@@ -527,8 +523,8 @@ class ReactionAction private constructor(private val satoriAction: SatoriAction)
     }
 
     companion object {
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-            ReactionAction(SatoriAction(platform, selfId, properties, "reaction", logger))
+        fun of(platform: String, selfId: String, properties: SatoriProperties) =
+            ReactionAction(SatoriAction(platform, selfId, properties, "reaction"))
     }
 }
 
@@ -547,9 +543,9 @@ class UserAction private constructor(
     }
 
     companion object {
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) = UserAction(
-            ChannelAction.of(platform, selfId, properties, logger),
-            SatoriAction(platform, selfId, properties, "user", logger)
+        fun of(platform: String, selfId: String, properties: SatoriProperties) = UserAction(
+            ChannelAction.of(platform, selfId, properties),
+            SatoriAction(platform, selfId, properties, "user")
         )
     }
 
@@ -568,8 +564,8 @@ class UserAction private constructor(
         }
 
         companion object {
-            fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-                ChannelAction(SatoriAction(platform, selfId, properties, "user.channel", logger))
+            fun of(platform: String, selfId: String, properties: SatoriProperties) =
+                ChannelAction(SatoriAction(platform, selfId, properties, "user.channel"))
         }
     }
 }
@@ -602,8 +598,8 @@ class FriendAction private constructor(private val satoriAction: SatoriAction) {
     }
 
     companion object {
-        fun of(platform: String, selfId: String, properties: SatoriProperties, logger: Logger) =
-            FriendAction(SatoriAction(platform, selfId, properties, "friend", logger))
+        fun of(platform: String, selfId: String, properties: SatoriProperties) =
+            FriendAction(SatoriAction(platform, selfId, properties, "friend"))
     }
 }
 
@@ -613,10 +609,7 @@ class AdminAction private constructor(
     @JvmField val webhook: WebhookAction
 ) {
     companion object {
-        fun of(properties: SatoriProperties, logger: Logger) = AdminAction(
-            LoginAction.of(properties, logger),
-            WebhookAction.of(properties, logger)
-        )
+        fun of(properties: SatoriProperties) = AdminAction(LoginAction.of(properties), WebhookAction.of(properties))
     }
 
 
@@ -627,8 +620,7 @@ class AdminAction private constructor(
         suspend fun list(): List<Login> = satoriAction.sendWithSerialize("list")
 
         companion object {
-            fun of(properties: SatoriProperties, logger: Logger) =
-                LoginAction(SatoriAction(null, null, properties, "login", logger))
+            fun of(properties: SatoriProperties) = LoginAction(SatoriAction(null, null, properties, "login"))
         }
     }
 
@@ -658,8 +650,7 @@ class AdminAction private constructor(
         }
 
         companion object {
-            fun of(properties: SatoriProperties, logger: Logger) =
-                WebhookAction(SatoriAction(null, null, properties, "webhook", logger))
+            fun of(properties: SatoriProperties) = WebhookAction(SatoriAction(null, null, properties, "webhook"))
         }
     }
 }
@@ -676,11 +667,11 @@ class SatoriAction(
     private val platform: String?,
     private val selfId: String?,
     private val properties: SatoriProperties,
-    private val resource: String,
-    private val logger: Logger
+    private val resource: String
 ) {
     private val mapper: ObjectMapper =
         jacksonObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    private val logger = GlobalLoggerFactory.getLogger {}
 
     suspend fun send(method: String, body: String? = null): String {
         HttpClient(CIO).use { client ->
@@ -702,10 +693,10 @@ class SatoriAction(
                     Satori Action: url: ${this.url},
                         headers: ${this.headers.build()},
                         body: ${this.body}
-                    """.trimIndent(), this::class.java
+                    """.trimIndent()
                 )
             }
-            logger.debug("Satori Action Response: $response", this::class.java)
+            logger.debug("Satori Action Response: $response")
             return response.body()
         }
     }
@@ -714,7 +705,7 @@ class SatoriAction(
         try {
             return mapper.readValue(send(method, body), object : TypeReference<T>() {})
         } catch (e: Exception) {
-            logger.error(e.localizedMessage, this::class.java)
+            logger.error(e.localizedMessage)
             throw e
         }
     }

@@ -10,7 +10,7 @@ MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details.
  */
 
-@file:Suppress("unused")
+@file:Suppress("unused", "MemberVisibilityCanBePrivate")
 
 package com.github.nyayurn.yutori
 
@@ -60,18 +60,16 @@ abstract class CoroutineSatoriEventService(private val scope: CoroutineScope) : 
 
 /**
  * Satori 事件服务的 WebSocket 实现
- * @param satori Satori 实例
+ * @param container 监听器容器
  * @param properties Satori Server 配置
  * @param name 用于区分不同 Satori 事件服务的名称
- * @param logger 日志接口
  * @param scope 协程作用域
  */
 @OptIn(DelicateCoroutinesApi::class)
 class WebSocketEventService @JvmOverloads constructor(
-    val satori: Satori,
+    val container: ListenersContainer,
     private val properties: SatoriProperties,
     private val name: String = "Satori",
-    private val logger: Logger = Slf4jLogger,
     scope: CoroutineScope = GlobalScope
 ) : CoroutineSatoriEventService(scope) {
     private var sequence: Number? = null
@@ -79,6 +77,7 @@ class WebSocketEventService @JvmOverloads constructor(
     private val client = HttpClient {
         install(WebSockets)
     }
+    private val logger = GlobalLoggerFactory.getLogger {}
 
     override fun close() {
         isConnected = false
@@ -94,7 +93,7 @@ class WebSocketEventService @JvmOverloads constructor(
                 properties.port,
                 "${properties.path}/${properties.version}/events"
             ) {
-                logger.info("[$name]: 成功建立 WebSocket 连接", this@WebSocketEventService::class.java)
+                logger.info("[$name]: 成功建立 WebSocket 连接")
                 isConnected = true
                 launch { sendIdentity(this@webSocket) }
                 for (frame in incoming) try {
@@ -103,21 +102,20 @@ class WebSocketEventService @JvmOverloads constructor(
                     onEvent(signaling)
                 } catch (e: Exception) {
                     logger.warn(
-                        "[$name]: 处理事件时出错(${(frame as Frame.Text).readText()}): ${e.localizedMessage}",
-                        this@WebSocketEventService::class.java
+                        "[$name]: 处理事件时出错(${(frame as Frame.Text).readText()}): ${e.localizedMessage}"
                     )
                     e.printStackTrace()
                 }
             }
         } catch (e: Exception) {
-            logger.warn("[$name]: WebSocket 连接断开: ${e.localizedMessage}", this::class.java)
+            logger.warn("[$name]: WebSocket 连接断开: ${e.localizedMessage}")
             e.printStackTrace()
             isConnected = false
             // 重连
             baseScope.launch {
-                logger.info("[$name]: 将在5秒后尝试重新连接", this@WebSocketEventService::class.java)
+                logger.info("[$name]: 将在5秒后尝试重新连接")
                 delay(5000)
-                logger.info("[$name]: 尝试重新连接", this@WebSocketEventService::class.java)
+                logger.info("[$name]: 尝试重新连接")
                 suspendConnect()
             }
         }
@@ -132,7 +130,7 @@ class WebSocketEventService @JvmOverloads constructor(
                 put("sequence", sequence)
             }
         }
-        logger.info("[$name]: 发送身份验证: $content", this::class.java)
+        logger.info("[$name]: 发送身份验证: $content")
         session.send(content)
     }
 
@@ -144,7 +142,7 @@ class WebSocketEventService @JvmOverloads constructor(
                     ready.logins.joinToString(
                         "\n"
                     ) { "{platform: ${it.platform}, selfId: ${it.selfId}}" }
-                }", this@WebSocketEventService::class.java)
+                }")
                 // 心跳
                 launch {
                     val content = jsonObj { put("op", Signaling.PING) }
@@ -155,87 +153,98 @@ class WebSocketEventService @JvmOverloads constructor(
                 }
             }
 
-            Signaling.EVENT -> launch { sendEvent(signaling) }
-            Signaling.PONG -> logger.debug("[$name]: 收到 PONG", this@WebSocketEventService::class.java)
-            else -> logger.error("Unsupported $signaling", this@WebSocketEventService::class.java)
+            Signaling.EVENT -> launch { sendEvent(signaling.body as Event) }
+            Signaling.PONG -> logger.debug("[$name]: 收到 PONG")
+            else -> logger.error("Unsupported $signaling")
         }
     }
 
-    private fun sendEvent(signaling: Signaling) {
-        val event = signaling.body as Event
+    private fun sendEvent(event: Event) {
         logger.info(
-            "[$name]: 接收事件: platform: ${event.platform}, selfId: ${event.selfId}, type: ${event.type}",
-            this::class.java
+            "[$name]: 接收事件: platform: ${event.platform}, selfId: ${event.selfId}, type: ${event.type}"
         )
-        logger.debug("[$name]: 事件详细信息: $event", this::class.java)
+        logger.debug("[$name]: 事件详细信息: $event")
         sequence = event.id
-        satori.runEvent(event, properties)
+        container.runEvent(event, properties)
     }
 
     companion object {
         @JvmStatic
         @JvmOverloads
         fun of(
-            properties: SatoriProperties,
+            container: ListenersContainer,
+            properties: SatoriProperties = SimpleSatoriProperties(),
             name: String = "Satori",
-            logger: Logger = Slf4jLogger,
             scope: CoroutineScope = GlobalScope
-        ) = WebSocketEventService(Satori(logger), properties, name, logger, scope)
-
-        @JvmStatic
-        @JvmOverloads
-        fun of(
-            host: String = "127.0.0.1",
-            port: Int = 5500,
-            token: String? = null,
-            name: String = "Satori",
-            logger: Logger = Slf4jLogger,
-            scope: CoroutineScope = GlobalScope
-        ) = WebSocketEventService(
-            Satori(logger), SimpleSatoriProperties(host, port, token = token), name, logger, scope
-        )
+        ) = WebSocketEventService(container, properties, name, scope)
 
         @JvmSynthetic
-        @JvmOverloads
-        inline fun of(
-            properties: SatoriProperties,
-            name: String = "Satori",
-            logger: Logger = Slf4jLogger,
-            scope: CoroutineScope = GlobalScope,
-            apply: Satori.() -> Unit
-        ) = of(properties, name, logger, scope).apply { satori.apply() }
+        inline fun of(name: String = "Satori", scope: CoroutineScope = GlobalScope, dsl: Builder.() -> Unit) =
+            Builder(name, scope).apply(dsl).build()
+    }
 
-        @JvmSynthetic
-        @JvmOverloads
-        inline fun of(
-            host: String = "127.0.0.1",
-            port: Int = 5500,
-            token: String? = null,
-            name: String = "Satori",
-            logger: Logger = Slf4jLogger,
-            scope: CoroutineScope = GlobalScope,
-            apply: Satori.() -> Unit
-        ) = of(host, port, token, name, logger, scope).apply { satori.apply() }
+    class Builder(private val name: String, private val scope: CoroutineScope) {
+        var container: ListenersContainer = FrameworkContainer.of()
+        var properties: SatoriProperties = SimpleSatoriProperties()
+
+        fun listeners(lambda: FrameworkContainer.() -> Unit) {
+            container = FrameworkContainer.of(lambda)
+        }
+
+        fun properties(lambda: PropertiesBuilder.() -> Unit) {
+            properties = PropertiesBuilder().apply(lambda).build()
+        }
+
+        fun build() = WebSocketEventService(container, properties, name, scope)
+
+        class PropertiesBuilder {
+            var host: String = "127.0.0.1"
+            var port: Int = 5500
+            var path: String = ""
+            var token: String? = null
+            var version: String = "v1"
+
+            fun host(lambda: () -> String) {
+                host = lambda()
+            }
+
+            fun port(lambda: () -> Int) {
+                port = lambda()
+            }
+
+            fun path(lambda: () -> String) {
+                path = lambda()
+            }
+
+            fun token(lambda: () -> String?) {
+                token = lambda()
+            }
+
+            fun version(lambda: () -> String) {
+                version = lambda()
+            }
+
+            fun build() = SimpleSatoriProperties(host, port, path, token, version)
+        }
     }
 }
 
 /**
  * Satori 事件服务的 WebHook 实现
- * @param satori Satori 实例
+ * @param container 监听器容器
  * @param properties Satori WebHook 配置
  * @param name 用于区分不同 Satori 事件服务的名称
- * @param logger 日志接口
  * @param scope 协程作用域
  */
 @OptIn(DelicateCoroutinesApi::class)
 class WebHookEventService @JvmOverloads constructor(
-    val satori: Satori,
+    val container: ListenersContainer,
     private val properties: SatoriWebHookProperties,
     private val name: String = "Satori",
-    private val logger: Logger = Slf4jLogger,
     scope: CoroutineScope = GlobalScope
 ) : CoroutineSatoriEventService(scope) {
     private var client: ApplicationEngine? = null
+    private val logger = GlobalLoggerFactory.getLogger {}
 
     override fun close() {
         client?.stop()
@@ -260,7 +269,7 @@ class WebHookEventService @JvmOverloads constructor(
                         call.response.status(HttpStatusCode.OK)
                     } catch (e: Exception) {
                         logger.warn(
-                            "[$name]: 处理事件时出错(${body}): ${e.localizedMessage}", this@WebHookEventService::class.java
+                            "[$name]: 处理事件时出错(${body}): ${e.localizedMessage}"
                         )
                         e.printStackTrace()
                         call.response.status(HttpStatusCode.InternalServerError)
@@ -268,8 +277,8 @@ class WebHookEventService @JvmOverloads constructor(
                 }
             }
         }.start()
-        logger.info("[$name]: 成功启动 HTTP 服务器", this::class.java)
-        AdminAction.of(properties, logger).webhook.create(
+        logger.info("[$name]: 成功启动 HTTP 服务器")
+        AdminAction.of(properties).webhook.create(
             "http://${properties.serverHost}:${properties.serverPort}",
             properties.token
         )
@@ -277,56 +286,91 @@ class WebHookEventService @JvmOverloads constructor(
 
     private fun sendEvent(event: Event) {
         logger.info(
-            "[$name]: 接收事件: platform: ${event.platform}, selfId: ${event.selfId}, type: ${event.type}",
-            this::class.java
+            "[$name]: 接收事件: platform: ${event.platform}, selfId: ${event.selfId}, type: ${event.type}"
         )
-        logger.debug("[$name]: 事件详细信息: $event", this::class.java)
-        satori.runEvent(event, properties)
+        logger.debug("[$name]: 事件详细信息: $event")
+        container.runEvent(event, properties)
     }
 
     companion object {
         @JvmStatic
         @JvmOverloads
         fun of(
-            properties: SatoriWebHookProperties,
+            container: ListenersContainer,
+            properties: SatoriWebHookProperties = SimpleSatoriWebHookProperties(),
             name: String = "Satori",
-            logger: Logger = Slf4jLogger,
             scope: CoroutineScope = GlobalScope
-        ) = WebHookEventService(Satori(logger), properties, name, logger, scope)
-
-        @JvmStatic
-        @JvmOverloads
-        fun of(
-            host: String = "127.0.0.1",
-            port: Int = 5500,
-            token: String? = null,
-            name: String = "Satori",
-            logger: Logger = Slf4jLogger,
-            scope: CoroutineScope = GlobalScope
-        ) = WebHookEventService(
-            Satori(logger), SimpleSatoriWebHookProperties(host, port, token = token), name, logger, scope
-        )
+        ) = WebHookEventService(container, properties, name, scope)
 
         @JvmSynthetic
-        @JvmOverloads
-        inline fun of(
-            properties: SatoriWebHookProperties,
-            name: String = "Satori",
-            logger: Logger = Slf4jLogger,
-            scope: CoroutineScope = GlobalScope,
-            apply: Satori.() -> Unit
-        ) = of(properties, name, logger, scope).apply { satori.apply() }
+        fun of(name: String = "Satori", scope: CoroutineScope = GlobalScope, dsl: Builder.() -> Unit) =
+            Builder(name, scope).apply(dsl).build()
+    }
 
-        @JvmSynthetic
-        @JvmOverloads
-        inline fun of(
-            host: String = "127.0.0.1",
-            port: Int = 5500,
-            token: String? = null,
-            name: String = "Satori",
-            logger: Logger = Slf4jLogger,
-            scope: CoroutineScope = GlobalScope,
-            apply: Satori.() -> Unit
-        ) = of(host, port, token, name, logger, scope).apply { satori.apply() }
+    class Builder(private val name: String, private val scope: CoroutineScope) {
+        var container: ListenersContainer = FrameworkContainer.of()
+        var properties: SatoriWebHookProperties = SimpleSatoriWebHookProperties()
+
+        fun listeners(lambda: FrameworkContainer.() -> Unit) {
+            container = FrameworkContainer.of(lambda)
+        }
+
+        fun properties(lambda: PropertiesBuilder.() -> Unit) {
+            properties = PropertiesBuilder().apply(lambda).build()
+        }
+
+        fun properties(lambda: () -> SatoriWebHookProperties) {
+            this.properties = lambda()
+        }
+
+        fun build() = WebHookEventService(container, properties, name, scope)
+
+        class PropertiesBuilder {
+            var server: Server = Server()
+            var host: String = "127.0.0.1"
+            var port: Int = 5500
+            var path: String = ""
+            var token: String? = null
+            var version: String = "v1"
+
+            fun server(lambda: Server.() -> Unit) {
+                server = Server().apply(lambda)
+            }
+
+            fun host(lambda: () -> String) {
+                host = lambda()
+            }
+
+            fun port(lambda: () -> Int) {
+                port = lambda()
+            }
+
+            fun path(lambda: () -> String) {
+                path = lambda()
+            }
+
+            fun token(lambda: () -> String?) {
+                token = lambda()
+            }
+
+            fun version(lambda: () -> String) {
+                version = lambda()
+            }
+
+            fun build() = SimpleSatoriWebHookProperties(server.host, server.port, host, port, path, token, version)
+
+            class Server {
+                var host: String = "0.0.0.0"
+                var port: Int = 8080
+
+                fun host(lambda: () -> String) {
+                    host = lambda()
+                }
+
+                fun port(lambda: () -> Int) {
+                    port = lambda()
+                }
+            }
+        }
     }
 }
