@@ -74,7 +74,7 @@ fun main() {
 }
 ```
 
-Bot.createMessage 等方法提供更方便的 DSL 使用
+actions.message.create 等方法提供更方便的 DSL 使用
 
 ```kotlin
 fun listen(actions: Actions, event: MessageEvent) {
