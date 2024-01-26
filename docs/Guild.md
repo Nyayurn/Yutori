@@ -9,8 +9,32 @@
 ## 项目创建
 
 1. 创建项目
-2. [引入依赖](#依赖引入)
-3. [基础使用](#基础使用)
+2. [添加仓库](#添加仓库)
+3. [引入依赖](#依赖引入)
+4. [基础使用](#基础使用)
+
+## 添加仓库
+
+### Maven
+
+```xml
+<repository>
+    <id>jitpack.io</id>
+    <url>https://jitpack.io</url>
+</repository>
+```
+
+### Gradle Kotlin DSL
+
+```kotlin
+maven { url = URI("https://jitpack.io") }
+```
+
+### Gradle Groovy DSL
+
+```groovy
+maven { url 'https://jitpack.io' }
+```
 
 ## 依赖引入
 
@@ -18,27 +42,52 @@
 
 ```xml
 <dependency>
-    <groupId>io.github.nyayurn</groupId>
-    <artifactId>yutori</artifactId>
-    <version>0.2.4-fix</version>
+    <groupId>com.github.Nyayurn</groupId>
+    <artifactId>Yutori</artifactId>
+    <version>0.3.0</version>
 </dependency>
 ```
 
 ### Gradle Kotlin DSL
 
 ```kotlin
-implementation("io.github.nyayurn:yutori:0.2.4-fix")
+implementation("com.github.Nyayurn:Yutori:0.3.0")
 ```
 
 ### Gradle Groovy DSL
 
 ```groovy
-implementation 'io.github.nyayurn:yutori:0.2.4-fix'
+implementation 'com.github.Nyayurn:Yutori:0.3.0'
 ```
 
 ## 基础使用
 
+### Kotlin
+
+```kotlin
+fun main() {
+    WebSocketEventService.of {
+        listeners {
+            message.created { actions, event ->
+                if (event.message.content == "在吗") runBlocking {
+                    actions.message.create(event.channel.id) {
+                        at { id = event.user.id }
+                        text { " 我在!" }
+                    }
+                }
+            }
+        }
+        properties {
+            token { "token" }
+        }
+    }.connect()
+}
+```
+
 ### Java
+
+!!! warning
+    该条目已过时, 请参考 Kotlin 示例使用
 
 ```java
 public class Main {
@@ -56,20 +105,13 @@ public class Main {
 }
 ```
 
-### Kotlin
+### C#
 
-```kotlin
-val properties = SimpleSatoriProperties("127.0.0.1:5500", "token")
-fun main() {
-    val client = Satori.client(properties)
-    client.onMessageCreated { bot, event, msg ->
-        if (msg == "在吗") {
-            bot.createMessage(event.channel.id, "" + At(event.user.id) + " 我在!")
-        }
-    }
-    client.connect()
-}
-```
+!!! warning
+    使用 C# 可能遇到很多问题, 推荐使用 [Satori.NET](https://github.com/bsdayo/Satori.NET) 而非本项目进行开发
+
+Coming soon...
+
 ## 其他
 
 Yutori: 作者名称 Yurn 与 Satori 协议名称结合而来

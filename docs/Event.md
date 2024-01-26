@@ -1,107 +1,107 @@
 # 任意事件 (Event)
 
-> satori.onEvent()
+> container.any()
 
 # 频道 (Channel)
 
 ## 加入群组
 
-> satori.onGuildAdded()
+> container.guild.added()
 
 ## 群组被修改
 
-> satori.onGuildUpdated()
+> container.guild.updated()
 
 ## 退出群组
 
-> satori.onGuildRemoved()
+> container.guild.removed()
 
 ## 接收到新的入群邀请
 
-> satori.onGuildRequest()
+> container.guild.request()
 
 # 群组成员 (GuildMember)
 
 ## 群组成员增加
 
-> satori.onGuildMemberAdded()
+> container.guild.member.added()
 
 ## 群组成员信息更新
 
-> satori.onGuildMemberUpdated()
+> container.guild.member.updated()
 
 ## 群组成员移除
 
-> satori.onGuildMemberRemoved()
+> container.guild.member.removed()
 
 ## 接收到新的加群请求
 
-> satori.onGuildMemberRequest()
+> container.guild.member.request()
 
 # 群组角色 (GuildRole)
 
 ## 群组角色被创建
 
-> satori.onGuildRoleCreated()
+> container.guild.role.created()
 
 ## 群组角色被修改
 
-> satori.onGuildRoleUpdated()
+> container.guild.role.updated()
 
 ## 群组角色被删除
 
-> satori.onGuildRoleDeleted()
+> container.guild.role.deleted()
 
 # 交互 (Interaction)
 
 ## 类型为 action 的按钮被点击
 
-> satori.onInteractionButton()
+> container.interaction.button()
 
 ## 调用斜线指令
 
-> satori.onInteractionCommand()
+> container.interaction.command()
 
 # 登录信息 (Login)
 
 ## 登录被创建
 
-> satori.onLoginAdded()
+> container.login.added()
 
 ## 登录被删除
 
-> satori.onLoginRemoved()
+> container.login.removed()
 
 ## 登录信息更新
 
-> satori.onLoginUpdated()
+> container.login.updated()
 
 # 消息 (Message)
 
 ## 消息被创建
 
-> satori.onMessageCreated()
+> container.message.created()
 
 ## 消息被编辑
 
-> satori.onMessageUpdated()
+> container.message.updated()
 
 ## 消息被删除
 
-> satori.onMessageDeleted()
+> container.message.deleted()
 
 # 表态 (Reaction)
 
 ## 表态被添加
 
-> satori.onReactionAdded()
+> container.reaction.added()
 
 ## 表态被移除
 
-> satori.onReactionRemoved()
+> container.reaction.removed()
 
 # 用户 (User)
 
 ## 接收到新的好友申请
 
-> satori.onFriendRequest()
+> container.friend.request()
