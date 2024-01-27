@@ -7,6 +7,9 @@
 ![](https://img.shields.io/badge/JDK-8+-brightgreen.svg?style=flat-square)
 [![](https://jitpack.io/v/Nyayurn/Yutori.svg?style=flat-square)](https://jitpack.io/#Nyayurn/Yutori)
 
+!!! warning
+    本项目已停更, 不会继续维护了, 建议使用其他项目进行开发
+
 </div>
 
 ## 介绍

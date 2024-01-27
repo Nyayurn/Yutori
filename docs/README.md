@@ -21,3 +21,6 @@ Yutori 是一个基于 [Satori](https://satori.chat) 协议的多平台机器人
 
 ## 事件
 [Event.md](Event.md)
+
+## 示例
+[Example](https://github.com/Nyayurn/Yutori/tree/master/example)

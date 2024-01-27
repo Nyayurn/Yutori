@@ -44,20 +44,20 @@ maven { url 'https://jitpack.io' }
 <dependency>
     <groupId>com.github.Nyayurn</groupId>
     <artifactId>Yutori</artifactId>
-    <version>0.3.0</version>
+    <version>final</version>
 </dependency>
 ```
 
 ### Gradle Kotlin DSL
 
 ```kotlin
-implementation("com.github.Nyayurn:Yutori:0.3.0")
+implementation("com.github.Nyayurn:Yutori:final")
 ```
 
 ### Gradle Groovy DSL
 
 ```groovy
-implementation 'com.github.Nyayurn:Yutori:0.3.0'
+implementation 'com.github.Nyayurn:Yutori:final'
 ```
 
 ## 基础使用
