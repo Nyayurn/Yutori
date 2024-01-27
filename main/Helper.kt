@@ -15,6 +15,7 @@ See the Mulan PSL v2 for more details.
 package com.github.nyayurn.yutori
 
 import com.github.nyayurn.yutori.message.element.*
+import com.github.nyayurn.yutori.message.element.Message
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.nodes.Node
@@ -103,6 +104,9 @@ object MessageUtil {
      */
     @JvmStatic
     fun String.encode() = replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+
+    @JvmStatic
+    fun String.decode() = replace("&amp;", "&").replace("&quot;", "\"").replace("&lt;", "<").replace("&gt;", ">")
 
     /**
      * 提取出 Satori 消息字符串中的纯文本消息元素
