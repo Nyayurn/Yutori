@@ -106,7 +106,7 @@ object MessageUtil {
     fun String.encode() = replace("&", "&amp;").replace("\"", "&quot;").replace("<", "&lt;").replace(">", "&gt;")
 
     @JvmStatic
-    fun String.decode() = replace("&amp;", "&").replace("&quot;", "\"").replace("&lt;", "<").replace("&gt;", ">")
+    fun String.decode() = replace("&gt;", ">").replace("&lt;", "<").replace("&quot;", "\"").replace("&amp;", "&")
 
     /**
      * 提取出 Satori 消息字符串中的纯文本消息元素
